@@ -39,6 +39,7 @@ class MenuShare
 		static std::unique_ptr<agl::Rectangle >rect;
 		static std::unique_ptr<agl::Circle	  >circ;
 		static std::unique_ptr<agl::Texture	  >border;
+    
 		static agl::Texture	  *blank;
 		static void			  *focusedMenu;
 		static bool			  *leftClick;
