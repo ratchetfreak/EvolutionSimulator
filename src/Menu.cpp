@@ -13,4 +13,3 @@ std::unique_ptr<agl::Text	  >    MenuShare::smallText;
 std::unique_ptr<agl::Rectangle > MenuShare::rect;
 std::unique_ptr<agl::Circle	  >  MenuShare::circ;
 std::unique_ptr<agl::Texture	>  MenuShare::border;
-
