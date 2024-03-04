@@ -9,10 +9,10 @@
 class ThreadPool
 {
 	public:
-		std::thread							**worker = nullptr;
+		std::vector<std::unique_ptr<std::thread>>	workers;
 		std::mutex							  jobMutex;
 		std::queue<std::function<void(void)>> jobList;
-		std::function<void()>				 *job = nullptr;
+		//std::function<void()>				 *job = nullptr;
 		std::condition_variable				  isJobAvailable;
 		int									  size;
 		bool								  terminateSignal = false;
@@ -22,7 +22,7 @@ class ThreadPool
 		{
 			while (true)
 			{
-				job[id] = nullptr;
+				std::function<void()> job;
 				{
 					std::unique_lock<std::mutex> lock(jobMutex);
 					isJobAvailable.wait(lock, [this]() { return !jobList.empty() || terminateSignal; });
@@ -33,22 +33,21 @@ class ThreadPool
 					}
 
 					count++;
-					job[id] = jobList.front();
+					job = jobList.front();
 					jobList.pop();
 				}
-				job[id]();
+				job();
 				count--;
 			}
 		}
 
 		ThreadPool(int size) : size(size)
 		{
-			worker = new std::thread *[size];
-			job	   = new std::function<void()>[size];
+			workers.resize(size);
 
 			for (int i = 0; i < size; i++)
 			{
-				worker[i] = new std::thread(&ThreadPool::threadLoop, this, i);
+				workers[i] = std::make_unique<std::thread>(&ThreadPool::threadLoop, this, i);
 			}
 
 			isJobAvailable.notify_one();
@@ -65,7 +64,8 @@ class ThreadPool
 
 		bool active()
 		{
-			if (count || jobList.size())
+      std::unique_lock<std::mutex> lock(jobMutex);
+			if (count.load() || !jobList.empty())
 			{
 				return true;
 			}
@@ -84,13 +84,13 @@ class ThreadPool
 
 			for (int i = 0; i < size; i++)
 			{
-				worker[i]->join();
-				delete worker[i];
+				workers[i]->join();
+				
 			}
 
-			delete[] worker;
+			workers.clear();
 
-			delete[] job;
+			
 		}
 };
 
