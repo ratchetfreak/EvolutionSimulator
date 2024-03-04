@@ -144,7 +144,7 @@ class Environment
 		agl::Vec<int, 2>										  gridResolution;
 		std::vector<std::vector<std::map<std::size_t, GridCell>>> grid;
 		ThreadPool												  pool;
-		agl::Vec<int, 2>										 *randomPosition;
+		std::vector<agl::Vec<int, 2> >										randomPosition;
 
 		void *selected = nullptr;
 
@@ -181,7 +181,7 @@ class Environment
 				vec.resize(gridResolution.y);
 			}*/
 
-			randomPosition = new agl::Vec<int, 2>[gridResolution.x * gridResolution.y];
+			randomPosition.resize(gridResolution.x * gridResolution.y);
 
 			int index = 0;
 

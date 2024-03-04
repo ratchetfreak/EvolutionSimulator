@@ -9,7 +9,7 @@ Creature::Creature() : Entity<PhysicsObj>(exists, position)
 	return;
 }
 
-void Creature::setup(CreatureData &creatureData, SimulationRules *simulationRules, Environment &env,
+void Creature::setup(CreatureData creatureData, SimulationRules *simulationRules, Environment &env,
 					 agl::Vec<float, 2> pos)
 {
 	// INPUT
@@ -29,7 +29,7 @@ void Creature::setup(CreatureData &creatureData, SimulationRules *simulationRule
 	// Eat
 	// Lay egg
 
-	this->creatureData = creatureData;
+	this->creatureData = std::move(creatureData);
 
 	// sight = 1;
 	// speed = 1;
@@ -119,8 +119,7 @@ void Creature::setup(CreatureData &creatureData, SimulationRules *simulationRule
 		}
 	}
 
-	network = new in::NeuralNetwork(*creatureData.netStr);
-	;
+	network = std::make_unique<in::NeuralNetwork>(*creatureData.netStr);
 
 	network->setActivation(in::tanh);
 	network->learningRate = .1f;
@@ -129,7 +128,7 @@ void Creature::setup(CreatureData &creatureData, SimulationRules *simulationRule
 void Creature::clear()
 {
 	network->destroy();
-	delete network;
+	
 
 	position = {0, 0};
 	velocity = {0, 0};

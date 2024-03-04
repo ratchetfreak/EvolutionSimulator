@@ -31,7 +31,7 @@ class Creature : public Entity<PhysicsObj>
         bool exists;
         agl::Vec<float, 2> position;
 
-		in::NeuralNetwork *network = nullptr;
+		std::unique_ptr<in::NeuralNetwork> network = nullptr;
 
 		bool eating	   = false;
 		bool layingEgg = false;
@@ -62,7 +62,7 @@ class Creature : public Entity<PhysicsObj>
 		Creature();
 		~Creature();
 
-		void setup(CreatureData &creatureData, SimulationRules *simulationRules, Environment &env, agl::Vec<float, 2> pos);
+		void setup(CreatureData creatureData, SimulationRules *simulationRules, Environment &env, agl::Vec<float, 2> pos);
 		void clear();
 
 		void learnBrain(SimulationRules &simRules);

@@ -274,7 +274,7 @@ int main()
 	} creatureNetworkPointers;
 
 	Menu creatureNetwork("CreatureNetwork", 325,										//
-						 NetworkGraph{[&]() { return &focusCreature->network; }},		//
+						 NetworkGraph{[&]() { return focusCreature->network.get(); }},		//
 						 ValueElement<std::string>{"Node", [&]() { return &nodeName; }} //
 	);
 
@@ -664,7 +664,7 @@ int main()
 
 				nodeName = "";
 
-				if (node < focusCreature->network->structure.totalInputNodes)
+				if (node < focusCreature->network->structure.totalInputNodes())
 				{
 					switch (node)
 					{
@@ -688,17 +688,17 @@ int main()
 				}
 				else
 				{
-					if (node < focusCreature->network->structure.totalNodes -
-								   focusCreature->network->structure.totalOutputNodes)
+					if (node < focusCreature->network->structure.totalNodes() -
+								   focusCreature->network->structure.totalOutputNodes())
 					{
 						nodeName =
-							"Hidden " + std::to_string(node - focusCreature->network->structure.totalInputNodes + 1);
+							"Hidden " + std::to_string(node - focusCreature->network->structure.totalInputNodes() + 1);
 					}
 					else
 					{
 						nodeName =
-							"Move " + std::to_string(((node - focusCreature->network->structure.totalInputNodes) -
-													  focusCreature->network->structure.totalHiddenNodes) +
+							"Move " + std::to_string(((node - focusCreature->network->structure.totalInputNodes()) -
+													  focusCreature->network->structure.totalHiddenNodes()) +
 													 1);
 					}
 				}

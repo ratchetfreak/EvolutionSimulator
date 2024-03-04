@@ -1,8 +1,8 @@
 #include "../inc/Egg.hpp"
 
-void Egg::setup(CreatureData &creatureData)
+void Egg::setup(CreatureData creatureData)
 {
-	this->creatureData = creatureData;
+	this->creatureData = std::move(creatureData);
 
 	timeleft = 100;
 

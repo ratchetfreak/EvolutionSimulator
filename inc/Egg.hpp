@@ -14,7 +14,7 @@ class Egg : public Entity<>
 		{
 		}
 
-		void setup(CreatureData &creatureData);
+		void setup(CreatureData creatureData);
 		void update();
 		void clear();
 };
