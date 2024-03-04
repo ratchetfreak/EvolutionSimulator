@@ -300,7 +300,7 @@ class Environment
 		agl::Vec<int, 2>										  gridResolution;
 		std::vector<std::vector<std::map<std::size_t, GridCell>>> grid;
 		ThreadPool												  pool;
-		std::vector<agl::Vec<int, 2>>										 randomPosition;
+		std::vector<agl::Vec<int, 2>>										randomPosition;
 
 		void *selected = nullptr;
 
