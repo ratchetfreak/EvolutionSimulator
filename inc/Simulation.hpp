@@ -7,7 +7,7 @@
 #include "Meat.hpp"
 #include "SimulationRules.hpp"
 #include "macro.hpp"
-#include <list>
+#include <vector>
 
 class Simulation
 {
@@ -42,19 +42,19 @@ class Simulation
 		static CreatureData bufferToCreatureData(Buffer buffer);
 
 		void addCreature(CreatureData creatureData, agl::Vec<float, 2> position);
-		void removeCreature(std::list<BaseEntity *>::iterator creature);
+		void removeCreature(std::vector<Creature>::iterator creature);
 
 		void addEgg(CreatureData creatureData, agl::Vec<float, 2> position);
-		void removeEgg(std::list<BaseEntity *>::iterator egg);
+		void removeEgg(std::vector<Egg>::iterator egg);
 
 		void addFood(agl::Vec<float, 2> position);
-		void removeFood(std::list<BaseEntity *>::iterator food);
+		void removeFood(std::vector<Food>::iterator food);
 		// depricated - WILL REMOVE
 		void removeFood(Food *food);
 
 		void addMeat(agl::Vec<float, 2> position);
 		void addMeat(agl::Vec<float, 2> position, float energy);
-		void removeMeat(std::list<BaseEntity *>::iterator meat);
+		void removeMeat(std::vector<Meat>::iterator meat);
 		// depricated - WILL REMOVE
 		void removeMeat(Meat *meat);
 };

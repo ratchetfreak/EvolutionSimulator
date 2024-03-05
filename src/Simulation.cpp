@@ -130,7 +130,7 @@ void Simulation::addCreature(CreatureData creatureData, agl::Vec<float, 2> posit
 	// // newCreature.rotation = PI / 2;
 }
 
-void Simulation::removeCreature(std::list<BaseEntity *>::iterator creature)
+void Simulation::removeCreature(std::vector<Creature>::iterator creature)
 {
 	env.removeEntity<Creature>(creature, [&](Creature &creature) { creature.clear(); });
 
@@ -144,7 +144,7 @@ void Simulation::addEgg(CreatureData creatureData, agl::Vec<float, 2> position)
 	newEgg.position = position;
 }
 
-void Simulation::removeEgg(std::list<BaseEntity *>::iterator egg)
+void Simulation::removeEgg(std::vector<Egg>::iterator egg)
 {
 	env.removeEntity<Egg>(egg, [](Egg &egg) { egg.clear(); });
 
@@ -163,19 +163,10 @@ void Simulation::addFood(agl::Vec<float, 2> position)
 
 void Simulation::removeFood(Food *food)
 {
-	std::list<BaseEntity *>::iterator iterator;
-
-	env.view<Food>([&](auto, auto it) {
-		if (*it == (BaseEntity *)(DoNotUse *)food)
-		{
-			iterator = it;
-		}
-	});
-
-	removeFood(iterator);
+  food->exists = false;
 }
 
-void Simulation::removeFood(std::list<BaseEntity *>::iterator food)
+void Simulation::removeFood(std::vector<Food>::iterator food)
 {
 	env.removeEntity<Food>(food, [&](Food &food) {});
 
@@ -196,7 +187,7 @@ void Simulation::addMeat(agl::Vec<float, 2> position)
 	this->addMeat(position, 50);
 }
 
-void Simulation::removeMeat(std::list<BaseEntity *>::iterator meat)
+void Simulation::removeMeat(std::vector<Meat>::iterator meat)
 {
 	env.removeEntity<Meat>(meat, [&](Meat &meat) {});
 
@@ -205,16 +196,7 @@ void Simulation::removeMeat(std::list<BaseEntity *>::iterator meat)
 
 void Simulation::removeMeat(Meat *meat)
 {
-	std::list<BaseEntity *>::iterator iterator;
-
-	env.view<Meat>([&](auto, auto it) {
-		if (*it == (BaseEntity *)(DoNotUse *)meat)
-		{
-			iterator = it;
-		}
-	});
-
-	removeMeat(iterator);
+  meat->exists = false;
 }
 
 float mutShift(float f, float min, float max)
@@ -882,7 +864,7 @@ void Simulation::updateSimulation()
 
 		o.updatePhysics();
 	});
-	env.clearGrid();
+	env.sortGrid();
 
 	env.selfUpdate<Creature>([this](Creature &creature) {
 		creature.updateNetwork();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <AGL/agl.hpp>
+#include "Entity.hpp"
 #include "CreatureData.hpp"
 #include "Food.hpp"
 #include "Meat.hpp"

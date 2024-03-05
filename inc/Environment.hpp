@@ -2,6 +2,8 @@
 
 #include "ThreadPool.hpp"
 #include "macro.hpp"
+
+
 #include <AGL/agl.hpp>
 #include <cstddef>
 #include <functional>
@@ -12,54 +14,256 @@
 #include <thread>
 #include <tuple>
 #include <typeinfo>
+#include "Entity.hpp"
 
 class Environment;
 
-class BaseEntity
-{
-	public:
-		bool			   &exists;
-		agl::Vec<float, 2> &position;
 
-		BaseEntity(bool &exists, agl::Vec<float, 2> &position) : exists(exists), position(position)
-		{
-		}
 
-		virtual ~BaseEntity()
-		{
-		}
-};
+// #include "Egg.hpp"
+// #include "Creature.hpp"
+// #include "Food.hpp"
+// #include "Meat.hpp"
 
-class DoNotUse : public BaseEntity
-{
-	public:
-		DoNotUse(bool &exists, agl::Vec<float, 2> &position) : BaseEntity(exists, position)
-		{
-		}
-};
-
-template <typename... T> class Signature
-{
-};
-
-template <typename... T> class Entity : public DoNotUse, public T...
-{
-	private:
-	public:
-		const static Signature<T...> signature;
-
-		Entity(bool &exists, agl::Vec<float, 2> &position) : DoNotUse(exists, position), T(exists, position)...
-		{
-		}
-
-		virtual ~Entity()
-		{
-		}
-};
+class Meat;
+class Food;
+class Egg;
+class Creature;
 
 template <typename... T> const Signature<T...> Entity<T...>::signature;
 
 class Environment
+{
+		template <typename T> struct storagevectors
+    {
+      std::vector<T> srcEntities; //read only during update
+      std::vector<T> dstEntities; // write during update
+      std::vector<int> idx; // indices
+    };
+    
+    template <typename S> void registerTraits()
+		{
+		}
+
+		template <typename S, typename T> void registerTraits()
+		{
+			std::size_t eHash = typeid(S).hash_code();
+			std::size_t tHash = typeid(T).hash_code();
+
+			traits[tHash].emplace_back(eHash);
+		}
+
+		template <typename S, typename T, typename... Ts, typename std::enable_if<sizeof...(Ts) != 0>::type * = nullptr>
+		void registerTraits()
+		{
+			std::size_t eHash = typeid(S).hash_code();
+			std::size_t tHash = typeid(T).hash_code();
+
+			traits[tHash].emplace_back(eHash);
+
+			registerTraits<Ts...>();
+		}
+
+		template <typename S, typename... Ts> void registerTraits(Signature<Ts...> signature)
+		{
+			registerTraits<S, Ts...>();
+
+			std::size_t eHash = typeid(S).hash_code();
+			traits[eHash].emplace_back(eHash);
+		}
+
+		template <int i = 0, typename... Ts, typename std::enable_if<(i == sizeof...(Ts))>::type * = nullptr>
+		void getArgsFromIterators(std::tuple<Ts *...> &args, std::list<BaseEntity *>::iterator it[])
+		{
+		}
+
+		template <int i = 0, typename... Ts, typename std::enable_if<(i < sizeof...(Ts))>::type * = nullptr>
+		void getArgsFromIterators(std::tuple<Ts *...> &args, std::list<BaseEntity *>::iterator it[])
+		{
+			std::get<i>(args) = std::remove_pointer_t<decltype(std::get<i>(args))>(it[i]);
+
+			getArgsFromIterators<i + 1, Ts...>(args, it);
+		}
+
+		template <typename T> void addToTraitMap()
+		{
+		}
+		template <typename T, typename U> void addToTraitMap()
+		{
+			long long offset = (long long)(U *)(T *)(1) - (long long)(BaseEntity *)(DoNotUse *)(T *)1;
+			traitMap[std::pair(typeid(T).hash_code(), typeid(U).hash_code())] = offset;
+		}
+		template <typename T, typename U, typename... Us,
+				  typename std::enable_if<(sizeof...(Us) > 0)>::type * = nullptr>
+		void addToTraitMap()
+		{
+			long long offset = (long long)(U *)(T *)(1) - (long long)(BaseEntity *)(DoNotUse *)(T *)1;
+			traitMap[std::pair(typeid(T).hash_code(), typeid(U).hash_code())] = offset;
+		}
+
+		template <typename T, typename... Us> void addToTraitMap(Signature<Us...> sig)
+		{
+			addToTraitMap<T, Us...>();
+		}
+  public:
+  
+		std::map<std::size_t, std::vector<std::size_t>>			  traits;
+		std::map<std::pair<std::size_t, std::size_t>, long long>  traitMap;
+		
+    storagevectors<Creature> creatures;
+    storagevectors<Egg> eggs;
+    storagevectors<Food> foods;
+    storagevectors<Meat> meats;
+    
+		agl::Vec<float, 2>										  size;
+		agl::Vec<int, 2>										  gridResolution;
+		ThreadPool												  pool;
+		std::vector<agl::Vec<int, 2> >										randomPosition;
+    void* selected;
+  
+    Environment() ;
+  
+		void setThreads(int threads)
+		{
+			pool.ThreadPool::~ThreadPool();
+			new (&pool) ThreadPool(threads);
+		}
+    
+
+		void setupGrid(agl::Vec<float, 2> size, agl::Vec<int, 2> gridResolution)
+		{
+			this->size			 = size;
+			this->gridResolution = gridResolution;
+
+			getStorage<Creature>().idx.resize(gridResolution.x * gridResolution.y);
+      getStorage<Food    >().idx.resize(gridResolution.x * gridResolution.y);
+      getStorage<Egg     >().idx.resize(gridResolution.x * gridResolution.y);
+      getStorage<Meat    >().idx.resize(gridResolution.x * gridResolution.y);
+      
+     
+
+			randomPosition.resize(gridResolution.x * gridResolution.y);
+
+			int index = 0;
+
+			if (size.y > size.x)
+			{
+				for (int y = 0; y < gridResolution.y; y++)
+				{
+					for (int x = 0; x < gridResolution.x; x++)
+					{
+						randomPosition[index] = {x, y};
+						index++;
+					}
+				}
+			}
+			else
+			{
+				for (int x = 0; x < gridResolution.x; x++)
+				{
+					for (int y = 0; y < gridResolution.y; y++)
+					{
+						randomPosition[index] = {x, y};
+						index++;
+					}
+				}
+			}
+		}
+    
+		template <typename T> typename Environment::storagevectors<T> &getStorage();
+    
+    template <> Environment::storagevectors<Creature> &getStorage<Creature>();
+    template <> Environment::storagevectors<Egg> &getStorage<Egg>();
+    template <> Environment::storagevectors<Food> &getStorage<Food>();
+    template <> Environment::storagevectors<Meat> &getStorage<Meat>();
+    
+    
+		template <typename T> typename std::vector<T> &getVector()
+    {
+      return getStorage<T>().srcEntities;
+    }
+		template <typename T> typename std::vector<int> &getIdxVector()
+    {
+      return getStorage<T>().idx;
+    }
+		template <typename T> typename std::vector<T> &getDstVector() 
+    {
+      return getStorage<T>().dstEntities;
+    }
+    
+    template <typename T> T &addEntity(){
+      getDstVector<T>().emplace_back();
+      return getDstVector<T>().back();
+    }
+    
+    template <typename T> typename std::pair<size_t, size_t> getRangeForTile(agl::Vec<int, 2> tilePosition)
+    {
+      size_t tileIndex = tile.x + tile.y*gridResolution.x % getIdxVector<T>().size();
+      
+      size_t start = 0;
+      if(tileIndex > 0){
+        start = getIdxVector<T>()[tileIndex-1];
+      }
+      if(tileIndex < 0){
+        end = getIdxVector<T>()[tileIndex];
+      }
+      return std::make_pair(start, end);
+    }
+    
+		template <typename T> T &removeEntity(typename std::vector<T>::iterator it, std::function<void(T &)> func)
+    {
+      
+      func(*(T *)(DoNotUse *)(*it));
+      it->exists = false;
+    }
+    
+    template <typename T> void setupTraits(){}
+    
+		template <typename T> typename std::vector<T>::iterator &getBegin()
+    {
+      return getVector<T>.begin();
+    }
+		template <typename T> typename std::vector<T>::iterator &getEnd()
+    {
+      return getVector<T>.end();
+    }
+      
+    
+		agl::Vec<int, 2> toGridPosition(agl::Vec<float, 2> position)
+		{
+			agl::Vec<int, 2> gridPosition;
+			gridPosition.x = (int)floorf((position.x / size.x) * (gridResolution.x));
+			gridPosition.y = (int)floorf((position.y / size.y) * (gridResolution.y));
+
+			if (gridPosition.x < 0)
+			{
+				gridPosition.x = 0;
+			}
+			else if (gridPosition.x > (gridResolution.x - 1))
+			{
+				gridPosition.x = (gridResolution.x - 1);
+			}
+
+			if (gridPosition.y < 0)
+			{
+				gridPosition.y = 0;
+			}
+			else if (gridPosition.y > (gridResolution.y - 1))
+			{
+				gridPosition.y = (gridResolution.y - 1);
+			}
+
+			return gridPosition;
+		}
+    
+    template <typename T> void sortDstToSrc();
+    void sortAllDstToSrc();
+    
+    void destroy();
+
+};
+
+class Environment2
 {
 	private:
 		template <typename S> void registerTraits()
@@ -148,7 +352,7 @@ class Environment
 
 		void *selected = nullptr;
 
-		Environment() : pool(THREADS)
+		Environment2() : pool(THREADS)
 		{
 		}
 

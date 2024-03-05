@@ -1,7 +1,8 @@
 #pragma once
 
 #include "AGL/include/ShaderBuilder.hpp"
-#include "Environment.hpp"
+//#include "Environment.hpp"
+#include "Entity.hpp"
 #include "other.hpp"
 #include <AGL/agl.hpp>
 #include <algorithm>
