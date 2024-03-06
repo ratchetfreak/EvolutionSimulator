@@ -287,6 +287,10 @@ class Environment
 	public:
 		struct GridCell
 		{
+      GridCell(){}
+      GridCell(GridCell&&o):list(std::move(o.list)){}
+      GridCell(const GridCell&o):list((o.list)){}
+      GridCell& operator =(GridCell&&o){list = std::move(o.list);return *this;}
 				std::list<BaseEntity *> list;
 				std::mutex				mtx;
 		};
@@ -296,7 +300,7 @@ class Environment
 		agl::Vec<int, 2>										  gridResolution;
 		std::vector<std::vector<std::map<std::size_t, GridCell>>> grid;
 		ThreadPool												  pool;
-		std::vector<agl::Vec<int, 2> >										randomPosition;
+		std::vector<agl::Vec<int, 2>>										 randomPosition;
 
 		void *selected = nullptr;
 
@@ -318,7 +322,11 @@ class Environment
 			grid.resize(gridResolution.x);
 			for (auto &vec : grid)
 			{
-				vec.resize(gridResolution.y);
+        while(vec.size() < gridResolution.y){
+          std::map<std::size_t, GridCell> cell;
+          vec.emplace_back(std::move(cell));
+        }
+				//vec.resize(gridResolution.y);
 			}
 
 			randomPosition.resize(gridResolution.x * gridResolution.y);
