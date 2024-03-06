@@ -302,7 +302,6 @@ class Environment
 		ThreadPool												  pool;
 		std::vector<agl::Vec<int, 2>>										 randomPosition;
 
-
 		void *selected = nullptr;
 
 		Environment() : pool(THREADS)
