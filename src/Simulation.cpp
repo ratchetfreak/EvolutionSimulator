@@ -932,8 +932,8 @@ void Simulation::updateSimulation()
 			{
 				Egg *hatchedEgg = &egg;
 
-				CreatureData creatureData = hatchedEgg->creatureData;
-				this->addCreature(creatureData, hatchedEgg->position);
+				CreatureData creatureData = hatchedEgg->creatureData.clone();
+				this->addCreature(std::move(creatureData), hatchedEgg->position);
 
 				egg.exists = false;
 				return;
@@ -1000,7 +1000,7 @@ void Simulation::updateSimulation()
 			int iBio = (int)creature.biomass;
 			for (int i = 0; i < iBio; i++)
 			{
-				CreatureData creatureData = creature.creatureData;
+				CreatureData creatureData = creature.creatureData.clone();
 
 				mutate(&creatureData, simulationRules.bodyMutation, simulationRules.brainMutation);
 
@@ -1010,7 +1010,7 @@ void Simulation::updateSimulation()
 				pos.x = simulationRules.size.x * ((float)rand() / (float)RAND_MAX);
 				pos.y = simulationRules.size.y * ((float)rand() / (float)RAND_MAX);
 
-				this->addEgg(creatureData, pos);
+				this->addEgg(std::move(creatureData), pos);
 
 				creature.incubating	 = false;
 				creature.eggDesposit = 0;
