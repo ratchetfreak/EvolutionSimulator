@@ -19,14 +19,14 @@ class MenuBar : public agl::Drawable, public MenuShare
 
 	public:
 		int			 length;
-		SimpleMenu **menu;
+		std::vector<SimpleMenu *>menu;
 		bool		 exists = true;
 
 		template <typename... Ts> MenuBar(Ts... menus)
 		{
 			length = sizeof...(menus);
 
-			this->menu = new SimpleMenu *[length];
+			this->menu.resize(length);
 
 			assign<0>(menus...);
 		}
@@ -117,10 +117,5 @@ class MenuBar : public agl::Drawable, public MenuShare
 
 				pen.x += 9;
 			}
-		}
-
-		~MenuBar()
-		{
-			delete[] menu;
 		}
 };

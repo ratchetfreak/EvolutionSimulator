@@ -30,46 +30,25 @@ CreatureData::CreatureData(float sight, int hue, std::vector<SegmentData> &segs,
 		vec.push_back(c);
 	}
 
-	netStr = new in::NetworkStructure(maxCon, totalSegJoints(sd) * 2 + 2, 0, totalSegJoints(sd), vec);
+	netStr = std::make_unique<in::NetworkStructure>(maxCon, totalSegJoints(sd) * 2 + 2, 0, totalSegJoints(sd), vec);
 
 	return;
 }
 
-CreatureData::CreatureData(const CreatureData &creatureData)
-{
-	delete netStr;
-	netStr = new in::NetworkStructure(*creatureData.netStr);
+CreatureData CreatureData::clone(){
+  CreatureData result;
+		result.netStr = std::make_unique<in::NetworkStructure>(*netStr);
 
-	sight		= creatureData.sight;
-	hue			= creatureData.hue;
-	startEnergy = creatureData.startEnergy;
-	preference	= creatureData.preference;
-	metabolism	= creatureData.metabolism;
-	useNEAT		= creatureData.useNEAT;
-	usePG		= creatureData.usePG;
-	sd			= creatureData.sd;
-}
+		result.sight      = sight;
+		result.hue        = hue;
+		result.startEnergy= startEnergy;
+		result.preference = preference;
+		result.metabolism = metabolism;
+		result.useNEAT    =useNEAT;
+		result.usePG      =usePG;
 
-void CreatureData::operator=(CreatureData &creatureData)
-{
-	delete netStr;
-	netStr = new in::NetworkStructure(*creatureData.netStr);
-
-	sight		= creatureData.sight;
-	hue			= creatureData.hue;
-	startEnergy = creatureData.startEnergy;
-	preference	= creatureData.preference;
-	metabolism	= creatureData.metabolism;
-	useNEAT		= creatureData.useNEAT;
-	usePG		= creatureData.usePG;
-	sd			= creatureData.sd;
-}
-
-CreatureData::~CreatureData()
-{
-	delete netStr;
-
-	return;
+		std::vector<SegmentData> sd;
+  return result;
 }
 
 int CreatureData::totalSegJoints(std::vector<SegmentData> &segs)

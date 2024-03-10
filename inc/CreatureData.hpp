@@ -16,7 +16,7 @@ class SegmentData
 class CreatureData
 {
 	public:
-		in::NetworkStructure *netStr = nullptr;
+		std::unique_ptr<in::NetworkStructure> netStr = nullptr;
 
 		float sight; // 0 - 2
 		int	  hue;	 // 0 - 359
@@ -32,10 +32,7 @@ class CreatureData
 
 		CreatureData();
 		CreatureData(float sight, int hue, std::vector<SegmentData> &segs, std::vector<in::Connection> &cons, int maxCon);
-		CreatureData(const CreatureData &creatureData);
-		~CreatureData();
-
-		void operator=(CreatureData &creatureData);
+    CreatureData clone();
 
 		static int totalSegJoints(std::vector<SegmentData> &segs);
 };

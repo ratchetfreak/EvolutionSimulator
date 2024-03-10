@@ -36,10 +36,10 @@ class Simulation
 		static Buffer		creatureDataToBuffer(CreatureData &creatureData);
 		static CreatureData bufferToCreatureData(Buffer buffer);
 
-		void addCreature(CreatureData &creatureData, agl::Vec<float, 2> position);
+		void addCreature(CreatureData creatureData, agl::Vec<float, 2> position);
 		void removeCreature(std::list<BaseEntity *>::iterator creature);
 
-		void addEgg(CreatureData &creatureData, agl::Vec<float, 2> position);
+		void addEgg(CreatureData creatureData, agl::Vec<float, 2> position);
 		void removeEgg(std::list<BaseEntity *>::iterator egg);
 
 		void addFood(agl::Vec<float, 2> position);

@@ -56,7 +56,7 @@ void Simulation::create(SimulationRules simulationRules, int seed)
 		position.x = (rand() / (float)RAND_MAX) * simulationRules.size.x;
 		position.y = (rand() / (float)RAND_MAX) * simulationRules.size.y;
 
-		this->addCreature(creatureData, position);
+		this->addCreature(std::move(creatureData), position);
 	}
 
 	for (int i = 0; i < foodCap; i++)
@@ -79,10 +79,10 @@ void Simulation::destroy()
 	env.destroy();
 }
 
-void Simulation::addCreature(CreatureData &creatureData, agl::Vec<float, 2> position)
+void Simulation::addCreature(CreatureData creatureData, agl::Vec<float, 2> position)
 {
 	Creature &newCreature = env.addEntity<Creature>();
-	newCreature.setup(creatureData, &simulationRules, env, position);
+	newCreature.setup(std::move(creatureData), &simulationRules, env, position);
 	// // newCreature.rotation = ((float)rand() / (float)RAND_MAX) * PI * 2;
 	//
 	// newCreature.segments.emplace_back(&newCreature);
@@ -137,10 +137,10 @@ void Simulation::removeCreature(std::list<BaseEntity *>::iterator creature)
 	return;
 }
 
-void Simulation::addEgg(CreatureData &creatureData, agl::Vec<float, 2> position)
+void Simulation::addEgg(CreatureData creatureData, agl::Vec<float, 2> position)
 {
 	Egg &newEgg = env.addEntity<Egg>();
-	newEgg.setup(creatureData);
+	newEgg.setup(std::move(creatureData));
 	newEgg.position = position;
 }
 
@@ -260,11 +260,11 @@ void mutateBodu(in::NetworkStructure *netStr, std::vector<SegmentData> &sd)
 
 		sd.erase(std::next(sd.begin(), seg));
 
-		int node = 2 + (2 * seg) + netStr->totalInputNodes + netStr->totalHiddenNodes;
+		int node = 2 + (2 * seg) + netStr->totalInputNodes() + netStr->totalHiddenNodes();
 
 		for (int i = node; i < (node + del); i++)
 		{
-			for (int x = 0; x < netStr->totalConnections; x++)
+			for (int x = 0; x < netStr->totalConnections(); x++)
 			{
 				if (netStr->connection[x].endNode == node || netStr->connection[x].startNode == node)
 				{
@@ -333,7 +333,7 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 
 			std::vector<int> jointMap;
 
-			for (int i = 0; i < creatureData->netStr->totalNodes; i++)
+			for (int i = 0; i < creatureData->netStr->totalNodes(); i++)
 			{
 				jointMap.push_back(i);
 			}
@@ -386,7 +386,7 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 
 						continue;
 					}
-					if (node == creatureData->netStr->totalInputNodes + actualNode)
+					if (node == creatureData->netStr->totalInputNodes() + actualNode)
 					{
 						it = jointMap.erase(it, std::next(it, del));
 						continue;
@@ -395,7 +395,7 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 					it++;
 				}
 
-				for (int i = 0; i < creatureData->netStr->totalConnections; i++)
+				for (int i = 0; i < creatureData->netStr->totalConnections(); i++)
 				{
 					in::Connection *con = (in::Connection *)&creatureData->netStr->connection[i];
 
@@ -408,13 +408,13 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 					{
 						creatureData->netStr->removeConnection(i);
 					}
-					if (inRange(con->startNode, creatureData->netStr->totalInputNodes + actualNode,
-								creatureData->netStr->totalInputNodes + actualNode + del - 1))
+					if (inRange(con->startNode, creatureData->netStr->totalInputNodes() + actualNode,
+								creatureData->netStr->totalInputNodes() + actualNode + del - 1))
 					{
 						creatureData->netStr->removeConnection(i);
 					}
-					if (inRange(con->endNode, creatureData->netStr->totalInputNodes + actualNode,
-								creatureData->netStr->totalInputNodes + actualNode + del - 1))
+					if (inRange(con->endNode, creatureData->netStr->totalInputNodes() + actualNode,
+								creatureData->netStr->totalInputNodes() + actualNode + del - 1))
 					{
 						creatureData->netStr->removeConnection(i);
 					}
@@ -486,7 +486,7 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 
 						continue;
 					}
-					if (node == creatureData->netStr->totalInputNodes + actualNode - 1)
+					if (node == creatureData->netStr->totalInputNodes() + actualNode - 1)
 					{
 						it = jointMap.insert(std::next(it, 1), -69);
 
@@ -503,7 +503,7 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 				}
 			}
 
-			for (int i = 0; i < creatureData->netStr->totalConnections; i++)
+			for (int i = 0; i < creatureData->netStr->totalConnections(); i++)
 			{
 				in::Connection *con = (in::Connection *)&creatureData->netStr->connection[i];
 				for (int i = 0; i < jointMap.size(); i++)
@@ -519,10 +519,13 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 				}
 			}
 
-			(int &)creatureData->netStr->totalInputNodes  = CreatureData::totalSegJoints(creatureData->sd) * 2 + 2;
-			(int &)creatureData->netStr->totalOutputNodes = CreatureData::totalSegJoints(creatureData->sd);
-			(int &)creatureData->netStr->totalNodes =
-				(int &)creatureData->netStr->totalInputNodes + (int &)creatureData->netStr->totalOutputNodes;
+			int totalInputNodes  = CreatureData::totalSegJoints(creatureData->sd) * 2 + 2;
+			int totalOutputNodes = CreatureData::totalSegJoints(creatureData->sd);
+			int totalNodes =
+				creatureData->netStr->totalInputNodes() + creatureData->netStr->totalOutputNodes();
+        creatureData->netStr->updateNodecounts(totalInputNodes,
+                      totalOutputNodes,
+                      totalNodes);
 		}
 	}
 
@@ -537,9 +540,9 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 	{
 		int nonExistIndex = -1;
 
-		in::Connection *connection = (in::Connection *)creatureData->netStr->connection;
+		std::vector<in::Connection> &connection = creatureData->netStr->connection;
 
-		for (int i = 0; i < creatureData->netStr->totalConnections; i++)
+		for (int i = 0; i < creatureData->netStr->totalConnections(); i++)
 		{
 			if (!connection[i].exists)
 			{
@@ -565,7 +568,7 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 
 		if (type == 0)
 		{
-			int index = round((rand() / (float)RAND_MAX) * (creatureData->netStr->totalConnections - 1));
+			int index = round((rand() / (float)RAND_MAX) * (creatureData->netStr->totalConnections() - 1));
 			int start = connection[index].startNode;
 			int end	  = connection[index].endNode;
 			(void)start;
@@ -574,7 +577,7 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 		}
 		else if (type == 1)
 		{
-			int index = round((rand() / (float)RAND_MAX) * (creatureData->netStr->totalConnections - 1));
+			int index = round((rand() / (float)RAND_MAX) * (creatureData->netStr->totalConnections() - 1));
 
 			creatureData->netStr->removeConnection(index);
 		}
@@ -582,11 +585,11 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 		{
 			int node = -1;
 
-			for (int x = 0; x < creatureData->netStr->totalHiddenNodes; x++)
+			for (int x = 0; x < creatureData->netStr->totalHiddenNodes(); x++)
 			{
-				node = x + creatureData->netStr->totalInputNodes;
+				node = x + creatureData->netStr->totalInputNodes();
 
-				for (int i = 0; i < creatureData->netStr->totalConnections; i++)
+				for (int i = 0; i < creatureData->netStr->totalConnections(); i++)
 				{
 					if (!connection[i].exists)
 					{
@@ -607,7 +610,7 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 
 			if (node != -1)
 			{
-				int index = round((rand() / (float)RAND_MAX) * (creatureData->netStr->totalConnections - 1));
+				int index = round((rand() / (float)RAND_MAX) * (creatureData->netStr->totalConnections() - 1));
 
 				connection[nonExistIndex].exists	= true;
 				connection[nonExistIndex].startNode = node;
@@ -620,9 +623,9 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 		else if (type == 3)
 		{
 			std::vector<int> hiddenNodes;
-			hiddenNodes.reserve(creatureData->netStr->totalConnections);
+			hiddenNodes.reserve(creatureData->netStr->totalConnections());
 
-			for (int i = 0; i < creatureData->netStr->totalConnections; i++)
+			for (int i = 0; i < creatureData->netStr->totalConnections(); i++)
 			{
 				if (!connection[i].exists)
 				{
@@ -630,7 +633,7 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 				}
 
 				if (connection[i].startNode <
-					(creatureData->netStr->totalInputNodes + creatureData->netStr->totalOutputNodes))
+					(creatureData->netStr->totalInputNodes() + creatureData->netStr->totalOutputNodes()))
 				{
 					auto it = std::find(hiddenNodes.begin(), hiddenNodes.end(), connection[i].startNode);
 					if (it != hiddenNodes.end())
@@ -641,24 +644,24 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 			}
 
 			int startNode =
-				round((rand() / (float)RAND_MAX) * (creatureData->netStr->totalInputNodes + hiddenNodes.size() - 1));
+				round((rand() / (float)RAND_MAX) * (creatureData->netStr->totalInputNodes() + hiddenNodes.size() - 1));
 			int endNode =
-				round((rand() / (float)RAND_MAX) * (creatureData->netStr->totalOutputNodes + hiddenNodes.size() - 1));
+				round((rand() / (float)RAND_MAX) * (creatureData->netStr->totalOutputNodes() + hiddenNodes.size() - 1));
 
-			if (startNode >= creatureData->netStr->totalInputNodes)
+			if (startNode >= creatureData->netStr->totalInputNodes())
 			{
-				startNode -= creatureData->netStr->totalInputNodes;
+				startNode -= creatureData->netStr->totalInputNodes();
 				startNode = hiddenNodes[startNode];
 			}
 
-			if (endNode >= creatureData->netStr->totalOutputNodes)
+			if (endNode >= creatureData->netStr->totalOutputNodes())
 			{
-				endNode -= creatureData->netStr->totalOutputNodes;
+				endNode -= creatureData->netStr->totalOutputNodes();
 				endNode = hiddenNodes[startNode];
 			}
 			else
 			{
-				endNode += creatureData->netStr->totalInputNodes;
+				endNode += creatureData->netStr->totalInputNodes();
 			}
 
 			connection[nonExistIndex].exists	= true;
@@ -731,7 +734,8 @@ void multithreadedRecurse(int size, std::function<void(int i)> lambda)
 		}
 	};
 
-	std::thread **thread = new std::thread *[THREADS];
+	std::vector<std::unique_ptr<std::thread >>thread;
+  thread.resize(THREADS);
 
 	int i = 0;
 
@@ -740,21 +744,21 @@ void multithreadedRecurse(int size, std::function<void(int i)> lambda)
 		int start = (size / THREADS) * i;
 		int end	  = (size / THREADS) * (i + 1) - 1;
 
-		thread[i] = new std::thread(recurse, start, end);
+		thread[i] = std::make_unique<std::thread>(recurse, start, end);
 	}
 
 	int start = (size / THREADS) * i;
 	int end	  = size - 1;
 
-	thread[i] = new std::thread(recurse, start, end);
+	thread[i] = std::make_unique<std::thread>(recurse, start, end);
 
 	for (int i = 0; i < THREADS; i++)
 	{
 		thread[i]->join();
-		delete thread[i];
+		thread[i].reset();
 	}
 
-	delete[] thread;
+	thread.clear();
 }
 
 agl::Vec<int, 2> indexToPosition(int i, agl::Vec<int, 2> size)

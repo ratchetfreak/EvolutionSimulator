@@ -33,12 +33,12 @@ inline bool pointInArea(agl::Vec<float, 2> point, agl::Vec<float, 2> position, a
 class MenuShare
 {
 	public:
-		static agl::Event	  *event;
-		static agl::Text	  *text;
-		static agl::Text	  *smallText;
-		static agl::Rectangle *rect;
-		static agl::Circle	  *circ;
-		static agl::Texture	  *border;
+		static agl::Event	    *event;
+		static std::unique_ptr<agl::Text	  >  text;
+		static std::unique_ptr<agl::Text	  >  smallText;
+		static std::unique_ptr<agl::Rectangle >rect;
+		static std::unique_ptr<agl::Circle	  >circ;
+		static std::unique_ptr<agl::Texture	  >border;
 		static agl::Texture	  *blank;
 		static void			  *focusedMenu;
 		static bool			  *leftClick;
@@ -57,23 +57,23 @@ class MenuShare
 			// tl
 			// bl
 
-			border = new agl::Texture();
+			border = std::make_unique<agl::Texture>();
 			border->loadFromFile("img/border.png");
 
-			text = new agl::Text();
+			text = std::make_unique< agl::Text>();
 			text->setFont(font);
 			text->setColor(agl::Color::Black);
 			text->setScale(1);
 
-			smallText = new agl::Text();
+			smallText = std::make_unique< agl::Text>();
 			smallText->setFont(smallFont);
 			smallText->setColor(agl::Color::Black);
 			smallText->setScale(1);
 
-			rect = new agl::Rectangle();
+			rect = std::make_unique< agl::Rectangle>();
 			rect->setTexture(blank);
 
-			circ = new agl::Circle(30);
+			circ = std::make_unique< agl::Circle>(30);
 			circ->setTexture(blank);
 
 			MenuShare::blank	 = blank;
@@ -86,12 +86,6 @@ class MenuShare
 			text->clearText();
 			smallText->clearText();
 			border->deleteTexture();
-
-			delete text;
-			delete smallText;
-			delete border;
-			delete rect;
-			delete circ;
 		}
 };
 
@@ -660,15 +654,15 @@ class NetworkGraph : public MenuElement
 	public:
 		int selectedID;
 
-		in::NeuralNetwork **network;
+		//in::NeuralNetwork **network;
 
-		std::function<in::NeuralNetwork **()> networkFunc;
+		std::function<in::NeuralNetwork *()> networkFunc;
 
 		NetworkGraph()
 		{
 		}
 
-		NetworkGraph(std::function<in::NeuralNetwork **()> networkFunc) : networkFunc(networkFunc)
+		NetworkGraph(std::function<in::NeuralNetwork *()> networkFunc) : networkFunc(networkFunc)
 		{
 		}
 
@@ -686,9 +680,9 @@ class NetworkGraph : public MenuElement
 			window.drawShape(*circ);
 
 			// draw node connections
-			for (int i = 0; i < (*networkFunc())->structure.totalConnections; i++)
+			for (int i = 0; i < (networkFunc())->structure.totalConnections(); i++)
 			{
-				in::Connection connection = (*networkFunc())->getConnection(i);
+				in::Connection connection = (networkFunc())->getConnection(i);
 
 				if (!connection.valid)
 				{
@@ -696,11 +690,11 @@ class NetworkGraph : public MenuElement
 				}
 
 				float startAngle = connection.startNode + 1;
-				startAngle /= (*networkFunc())->getTotalNodes();
+				startAngle /= (networkFunc())->getTotalNodes();
 				startAngle *= PI * 2;
 
 				float endAngle = connection.endNode + 1;
-				endAngle /= (*networkFunc())->getTotalNodes();
+				endAngle /= (networkFunc())->getTotalNodes();
 				endAngle *= PI * 2;
 
 				agl::Vec<float, 2> startPosition = agl::pointOnCircle(startAngle);
@@ -735,9 +729,9 @@ class NetworkGraph : public MenuElement
 			}
 
 			// draw nodes
-			for (int i = 0; i < (*networkFunc())->getTotalNodes(); i++)
+			for (int i = 0; i < (networkFunc())->getTotalNodes(); i++)
 			{
-				float angle = (360. / (*networkFunc())->getTotalNodes()) * (i + 1);
+				float angle = (360. / (networkFunc())->getTotalNodes()) * (i + 1);
 
 				float x = cos(angle * (3.14159 / 180));
 				float y = sin(angle * (3.14159 / 180));
@@ -753,7 +747,7 @@ class NetworkGraph : public MenuElement
 
 				circ->setPosition(pos);
 
-				float nodeValue = (*networkFunc())->getNode(i).value;
+				float nodeValue = (networkFunc())->getNode(i).value;
 
 				if (nodeValue > 0)
 				{
