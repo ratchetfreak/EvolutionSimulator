@@ -536,8 +536,8 @@ void mutate(CreatureData *creatureData, int bodyMutation, int networkCycles)
 	for (int i = 0; i < networkCycles; i++)
 	{
 		int nonExistIndex = -1;
-
-		in::Connection *connection = (in::Connection *)creatureData->netStr->connection;
+    in::NetworkStructure *netStr = creatureData->netStr.get();
+		std::vector<in::Connection> &connection = netStr->connection;
 
 		for (int i = 0; i < creatureData->netStr->totalConnections; i++)
 		{

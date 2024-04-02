@@ -62,7 +62,9 @@ class Environment
 		{
 			auto  hashT = typeid(O).hash_code();
 			auto  hashU = typeid(E).hash_code();
-			auto &listT = grid[gridPosition.x][gridPosition.y][hashT].list;
+			auto &gridCell = this->grid[gridPosition.x][gridPosition.y];
+      auto &hashcell = gridCell[hashT];
+      auto & listT = hashcell.list;
 			for (auto it = listT.begin(); it != listT.end(); it++)
 			{
 				T *addressT = (O *)(DoNotUse *)*it;
@@ -82,7 +84,7 @@ class Environment
 						{
 							grid[gridPosition.x + x][gridPosition.y + y][hashU].mtx.lock();
 							grid[gridPosition.x][gridPosition.y][hashT].mtx.lock();
-							gridUpdate<T, U, oneWay, mirror, O, E, false>(func, gridPosition, {x, y}, addressT, it);
+							gridUpdate<T, U, oneWay, mirror, O, E, false>(func, gridPosition, {x, y}, addressT, it, listT.end());
 							grid[gridPosition.x][gridPosition.y][hashT].mtx.unlock();
 							grid[gridPosition.x + x][gridPosition.y + y][hashU].mtx.unlock();
 						}
@@ -92,7 +94,7 @@ class Environment
 					{
 						grid[gridPosition.x + x][gridPosition.y + 0][hashU].mtx.lock();
 						grid[gridPosition.x][gridPosition.y][hashT].mtx.lock();
-						gridUpdate<T, U, oneWay, mirror, O, E, false>(func, gridPosition, {x, 0}, addressT, it);
+						gridUpdate<T, U, oneWay, mirror, O, E, false>(func, gridPosition, {x, 0}, addressT, it, listT.end());
 						grid[gridPosition.x][gridPosition.y][hashT].mtx.unlock();
 						grid[gridPosition.x + x][gridPosition.y + 0][hashU].mtx.unlock();
 					}
@@ -114,11 +116,11 @@ class Environment
 				}
 				if (hashT == hashU && oneWay)
 				{
-					gridUpdate<T, U, oneWay, mirror, O, E, true>(func, gridPosition, {0, 0}, addressT, it);
+					gridUpdate<T, U, oneWay, mirror, O, E, true>(func, gridPosition, {0, 0}, addressT, it, listT.end());
 				}
 				else
 				{
-					gridUpdate<T, U, oneWay, mirror, O, E, false>(func, gridPosition, {0, 0}, addressT, it);
+					gridUpdate<T, U, oneWay, mirror, O, E, false>(func, gridPosition, {0, 0}, addressT, it, listT.end());
 				}
 
 				if (hashT > hashU)
@@ -140,7 +142,7 @@ class Environment
 				{
 					grid[gridPosition.x][gridPosition.y][hashT].mtx.lock();
 					grid[gridPosition.x + x][gridPosition.y + 0][hashU].mtx.lock();
-					gridUpdate<T, U, oneWay, mirror, O, E, false>(func, gridPosition, {x, 0}, addressT, it);
+					gridUpdate<T, U, oneWay, mirror, O, E, false>(func, gridPosition, {x, 0}, addressT, it, listT.end());
 					grid[gridPosition.x + x][gridPosition.y + 0][hashU].mtx.unlock();
 					grid[gridPosition.x][gridPosition.y][hashT].mtx.unlock();
 				}
@@ -150,7 +152,7 @@ class Environment
 					{
 						grid[gridPosition.x][gridPosition.y][hashT].mtx.lock();
 						grid[gridPosition.x + x][gridPosition.y + y][hashU].mtx.lock();
-						gridUpdate<T, U, oneWay, mirror, O, E, false>(func, gridPosition, {x, y}, addressT, it);
+						gridUpdate<T, U, oneWay, mirror, O, E, false>(func, gridPosition, {x, y}, addressT, it, listT.end());
 						grid[gridPosition.x + x][gridPosition.y + y][hashU].mtx.unlock();
 						grid[gridPosition.x][gridPosition.y][hashT].mtx.unlock();
 					}
@@ -236,14 +238,15 @@ class Environment
 		template <typename T, typename U, bool oneWay = false, bool mirror = false, typename O, typename E,
 				  bool sameGrid = false>
 		inline void gridUpdate(std::function<void(T &, U &)> func, agl::Vec<int, 2> gridPosition,
-							   agl::Vec<int, 2> gridOffset, T *addressT, std::list<BaseEntity *>::iterator &it1)
+							   agl::Vec<int, 2> gridOffset, T *addressT, std::list<BaseEntity *>::iterator &it1, const std::list<BaseEntity *>::iterator &it1end)
 		{
 			auto &list2 =
 				getListInGrid({gridOffset.x + gridPosition.x, gridOffset.y + gridPosition.y}, typeid(E).hash_code());
 
 			std::list<BaseEntity *>::iterator it2 = sameGrid ? std::next(it1, 1) : list2.begin();
+      const std::list<BaseEntity *>::iterator end2 = sameGrid ? it1end : list2.end();
 
-			for (; *it2 != *list2.end(); it2++)
+			for (; it2 != end2; it2++)
 			{
 				U *addressU = (E *)(DoNotUse *)*it2;
 
@@ -289,6 +292,8 @@ class Environment
 		{
 				std::list<BaseEntity *> list;
 				std::mutex				mtx;
+        GridCell(const GridCell& o):list(o.list), mtx(){}
+        GridCell():list(), mtx(){}
 		};
 
 		std::map<std::size_t, std::list<BaseEntity *>>			  entityList;
@@ -565,7 +570,7 @@ class Environment
 			typedef std::remove_reference_t<decltype(std::tuple_element_t<i, T>())> EnTy;
 			auto &list = entityList[typeid(EnTy).hash_code()];
 
-			for (auto it = list.begin(); it != list.end(); it++)
+			for (auto it = list.begin(); it != list.end(); )
 			{
 				EnTy *en = (EnTy *)(DoNotUse *)*it;
 
@@ -573,12 +578,12 @@ class Environment
 
 				if (!en->exists || std::isnan(en->position.x))
 				{
-					it--;
-					list.erase(std::next(it, 1));
+					it = list.erase(it);
 				}
 				else
 				{
 					addToGrid<EnTy>(*(BaseEntity *)(DoNotUse *)en);
+          it++;
 				}
 			}
 

@@ -16,7 +16,7 @@ class SegmentData
 class CreatureData
 {
 	public:
-		in::NetworkStructure *netStr = nullptr;
+		std::unique_ptr<in::NetworkStructure> netStr;
 
 		float sight; // 0 - 2
 		int	  hue;	 // 0 - 359

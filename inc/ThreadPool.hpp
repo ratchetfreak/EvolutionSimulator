@@ -33,7 +33,7 @@ class ThreadPool
 					}
 
 					count++;
-					job[id] = jobList.front();
+					job[id] = std::move(jobList.front());
 					jobList.pop();
 				}
 				job[id]();

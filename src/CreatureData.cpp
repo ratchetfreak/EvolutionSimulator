@@ -30,16 +30,14 @@ CreatureData::CreatureData(float sight, int hue, std::vector<SegmentData> &segs,
 		vec.push_back(c);
 	}
 
-	netStr = new in::NetworkStructure(maxCon, totalSegJoints(sd) * 2 + 2, 0, totalSegJoints(sd), vec);
+	netStr = std::make_unique< in::NetworkStructure>(maxCon, totalSegJoints(sd) * 2 + 2, 0, totalSegJoints(sd), vec);
 
 	return;
 }
 
 CreatureData::CreatureData(const CreatureData &creatureData)
 {
-	delete netStr;
-	netStr = new in::NetworkStructure(*creatureData.netStr);
-
+	netStr = std::make_unique<in::NetworkStructure>(*creatureData.netStr);
 	sight		= creatureData.sight;
 	hue			= creatureData.hue;
 	startEnergy = creatureData.startEnergy;
@@ -52,8 +50,7 @@ CreatureData::CreatureData(const CreatureData &creatureData)
 
 void CreatureData::operator=(CreatureData &creatureData)
 {
-	delete netStr;
-	netStr = new in::NetworkStructure(*creatureData.netStr);
+	netStr = std::make_unique<in::NetworkStructure>(*creatureData.netStr);
 
 	sight		= creatureData.sight;
 	hue			= creatureData.hue;
@@ -67,7 +64,6 @@ void CreatureData::operator=(CreatureData &creatureData)
 
 CreatureData::~CreatureData()
 {
-	delete netStr;
 
 	return;
 }

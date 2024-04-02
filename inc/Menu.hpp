@@ -263,6 +263,7 @@ class PressedArea : public agl::Drawable, public MenuShare
 			glUniform1i(menuShader->getUniformLocation("type"), 5);
 
 			bool state = true;
+      (void)state;
 
 			// body
 			rect->setRotation({0, 0, 0});

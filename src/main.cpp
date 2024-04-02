@@ -450,6 +450,7 @@ int main()
 			ButtonElement<Hold>	  *start;
 			ButtonElement<Hold>	  *kill;
 			ButtonElement<Toggle> *pause;
+			ButtonElement<Hold>	  *step;
 	} simMenuPointers;
 
 	Menu simMenu("simMenu", 175,														  //
@@ -464,7 +465,8 @@ int main()
 				 FieldElement<float>{"simCycles", 1.0},									  //
 				 ButtonElement<Hold>{"START"},											  //
 				 ButtonElement<Hold>{"KILL"},											  //
-				 ButtonElement<Toggle>{"PAUSE"}											  //
+				 ButtonElement<Toggle>{"PAUSE"},											  //
+				 ButtonElement<Toggle>{"STEP"}											  //
 	);
 
 	simMenu.bindPointers(&simMenuPointers);
@@ -535,10 +537,10 @@ int main()
 
 		event.poll();
 
-		if (!simMenuPointers.pause->state && simulation.active)
+		if ((!simMenuPointers.pause->state || simMenuPointers.step->state)&& simulation.active)
 		{
 			static float cycle = 0;
-
+      simMenuPointers.step->state = false;
 			cycle += simMenuPointers.simCycles->value;
 
 			for (int i = 0; i < cycle; i++)

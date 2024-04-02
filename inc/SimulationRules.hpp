@@ -34,7 +34,7 @@ class SimulationRules
 			 {{4, 24}, {}},
 		 };
 		std::vector<in::Connection> startBrain = {in::Connection(1, 4, 1)};
-		int maxConnections;
+		int maxConnections=10;
 };
 
 template <typename T> void recurse(T processor, in::Connection &c, std::string name = "null")
